@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Interview</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+
+<body>
+    <h1>Interview Questions</h1>
+    <!-- Add the necessary HTML structure for the question carousel -->
+<div class="question-carousel">
+    <!-- Display the current question -->
+    <div class="question-container">
+        <h2 id="question-skill"></h2>
+      <h3 id="question-text"></h3>
+      <textarea id="answer-input" rows="4" cols="50" placeholder="Enter your answer..." required></textarea>
+    </div>
+  
+    <!-- Navigation buttons -->
+    <div class="navigation-buttons">
+      <button id="prev-button" onclick="goToPrevQuestion()" disabled>Previous</button>
+      <button id="next-button" onclick="goToNextQuestion()">Next</button>
+    </div>
+  
+    <!-- Submit button -->
+    <button id="submit-button" onclick="submitAnswers()" disabled>Submit</button>
+  </div>
+  
+  <!-- Add the necessary JavaScript code -->
+  <script>
+    // Retrieve the questions data from the Flask-rendered variable
+    const questionsData = {{ questions_data | safe }};
+    // console.log(questionsData, typeof questionsData);
+
+    //
+    var QuestionsDATA = [];
+    
+    // Initialize variables
+    let currentQuestionIndex = 0;
+    for (let skill in questionsData){
+        questionsData[skill].forEach(question => {
+            
+            QuestionsDATA.push({[skill] : question});
+            displayQuestion();
+        });
+    }
+
+    const totalQuestions = QuestionsDATA.length;
+    var answers =new Array(totalQuestions).fill('Enter Your Answer..');
+    // console.log(QuestionsDATA);
+    // Function to display the current question
+    function displayQuestion() {
+    //   console.log(QuestionsDATA[currentQuestionIndex]);
+      const q = QuestionsDATA[currentQuestionIndex];
+      skill = Object.keys(q)[0];
+      question = q[skill];
+      const questionSkill = document.getElementById('question-skill');
+      questionSkill.textContent = skill.split('-')[0];
+      const questionTextElement = document.getElementById('question-text');
+      questionTextElement.textContent = question;
+      document.addEventListener('DOMContentLoaded', function() {
+      // Get the text input element by its ID
+      const inputElement = document.getElementById("answer-input");
+        console.log(currentQuestionIndex + inputElement.value)
+      // Set the value of the input element
+      inputElement.value = answers[currentQuestionIndex];
+      });
+        console.log(answers);
+
+    }
+  
+    // Function to go to the previous question
+    function goToPrevQuestion() {
+      if (currentQuestionIndex > 0) {
+
+        // Get the text input element by its ID
+        var inputElement = document.getElementById("answer-input");
+
+        // Set the value of the input element
+        answers[currentQuestionIndex]=inputElement.value;
+        
+        currentQuestionIndex--;
+        if (currentQuestionIndex===0 ){
+            // Disable the prev button
+            document.getElementById("prev-button").disabled = true;
+        }
+        displayQuestion();
+      }
+        
+    }
+  
+    // Function to go to the next question
+    function goToNextQuestion() {
+      if (currentQuestionIndex < totalQuestions - 1) {
+        
+        // Disable the submit button
+        document.getElementById("submit-button").disabled = true;
+        document.getElementById("prev-button").disabled = false;
+        
+        // Get the text input element by its ID
+        var inputElement = document.getElementById("answer-input");
+
+        // Set the value of the input element
+        answers[currentQuestionIndex]=inputElement.value;
+        
+        currentQuestionIndex++;
+        displayQuestion();
+      }
+      else{
+      document.getElementById("submit-button").disabled = false;
+      document.getElementById("next-button").disabled = true;}
+    }
+  
+    // Function to submit the answers
+    function submitAnswers() {
+      // Collect the answers from the text areas
+      const answers = [];
+      const answerInputs = document.querySelectorAll('textarea[id^="answer-input"]');
+      answerInputs.forEach(input => answers.push(input.value));
+  
+      // Perform any necessary processing with the answers
+  
+      // Example: Log the answers to the console
+      console.log(answers);
+    }
+  
+    // Display the first question
+    displayQuestion();
+  </script>
+  
+
+</body>
+
+</html>

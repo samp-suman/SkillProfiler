@@ -1,0 +1,76 @@
+<!-- add_skill.html -->
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Add Skills</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+
+<body>
+    <h2>Add Skills</h2>
+
+    <form method="POST" action="/get_skills">
+        <div id="skills-container">
+            <div class="form-input">
+                <label for="skill">Skill:</label>
+                <input type="text" name="skill" required>
+                <label for="proficiency">Proficiency:</label>
+                <select name="proficiency" required>
+                    <option value="Beginner">Beginner</option>
+                    <option value="Intermediate">Intermediate</option>
+                    <option value="Advanced">Advanced</option>
+                </select>
+            </div>
+        </div>
+        <div class="btn-container">
+            <button type="button" id="add-skill-btn">Add Skill</button>
+        </div>
+        <div class="btn-container">
+            <input type="submit" id="submit-btn" value="Submit">
+        </div>
+    </form>
+
+    <script>
+        document.getElementById("add-skill-btn").addEventListener("click", function () {
+            var container = document.getElementById("skills-container");
+
+            var newSkill = document.createElement("div");
+            newSkill.className = "form-input";
+
+            var skillInput = document.createElement("input");
+            skillInput.type = "text";
+            skillInput.name = "skill";
+            skillInput.required = true;
+
+            var proficiencySelect = document.createElement("select");
+            proficiencySelect.name = "proficiency";
+            proficiencySelect.required = true;
+            var proficiencyOptions = ["Beginner", "Intermediate", "Advanced"];
+            for (var i = 0; i < proficiencyOptions.length; i++) {
+                var option = document.createElement("option");
+                option.value = proficiencyOptions[i];
+                option.text = proficiencyOptions[i];
+                proficiencySelect.appendChild(option);
+            }
+
+            var removeBtn = document.createElement("button");
+            removeBtn.type = "button";
+            removeBtn.className = "remove-skill-btn";
+            removeBtn.textContent = "Remove Skill";
+            removeBtn.addEventListener("click", function () {
+                container.removeChild(newSkill);
+            });
+
+            newSkill.appendChild(document.createElement("label")).textContent = "Skill:";
+            newSkill.appendChild(skillInput);
+            newSkill.appendChild(document.createElement("label")).textContent = "Proficiency:";
+            newSkill.appendChild(proficiencySelect);
+            newSkill.appendChild(removeBtn);
+
+            container.appendChild(newSkill);
+        });
+    </script>
+</body>
+
+</html>

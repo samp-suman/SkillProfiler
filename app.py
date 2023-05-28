@@ -1,162 +1,132 @@
-import streamlit as st
+from flask import Flask, render_template, request, redirect
+import json
 import openai
 
+# Initialize the OpenAI API with your API key
+openai.api_key = "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"
 
-def main():
-
-    # Override Tab key behavior in the text area
-    st.markdown("""
-    <style>
-    .block-container .stTextArea { resize: none; }
-    </style>
-    """, unsafe_allow_html=True)
-
-    st.title("SkillProfiler - Tech Stack Interview")
-
-    skills = []
-    proficiency_levels = []
-
-    st.subheader("Enter Skills and Proficiency Levels")
-    Primary_skill = st.text_input("Primary Skill", key=f'skill-primary     ')
-    Primary_proficiency_level = st.selectbox(
-        "Proficiency Level",
-        ["Beginner", "Intermediate", "Advanced"],
-        key=f'profiency-primary'
-    )
-    # Secondary_skill = st.text_input("Secondary Skill", key=f'skill-secondary')
-    # Secondary_proficiency_level = st.selectbox(
-    #     "Proficiency Level",
-    #     ["Beginner", "Intermediate", "Advanced"],
-    #     key=f'profiency-secondary'
-    # )
-    skills.append(Primary_skill)
-    proficiency_levels.append(Primary_proficiency_level)
-    # skills.append(Secondary_skill)
-    # proficiency_levels.append(Secondary_proficiency_level)
-    # def skills_add():
-    #     index = len(skills)
-    #     skill = st.text_input("Skill", key=f'skill-{index}')
-    #     proficiency_level = st.selectbox(
-    #         "Proficiency Level",
-    #         ["Beginner", "Intermediate", "Advanced"],
-    #         key=f'profiency-{index}'
-    #     )
-    #     skills.append(skill)
-    #     proficiency_levels.append(proficiency_level)
-    # if st.button('Add Skills+', key=f'skill-btn-{len(skills)}'):
-    #     skills_add()
-
-    # skills_add()
-
-    # Display input fields for skills and proficiency levels
-    print()
-    if st.button("Start Interview"):
-
-        # Generate questions based on skills
-        questions = generate_questions(skills, proficiency_levels)
-
-        total_score = 0
-
-        # Iterate through each question
-        for i, question in enumerate(questions):
-            openai_answer = generate_openai_answer(question)
-            with st.form(f"my_form-q-{i}"):
-                st.subheader(f"Question {i+1}")
-                st.write(question)
-                user_answer = st.text_area(
-                    "Your Answer", key=f'text-area-q-{i}')
-
-                # Every form must have a submit button.
-                submitted = st.form_submit_button("Submit")
-                if submitted:
-                    st.write("Score processing")
-                    # with st.spinner("Processing..."):
-                    #     # Make API call
-
-                    #     score = evaluate_answer(user_answer, openai_answer)
-                    #     st.success(score)
-                    #     total_score += score
-            # st.write("OpenAI Answer:", openai_answer)
-        st.write("Your Score:", total_score)
-        if st.button('Submit', key='final-submit'):
-            st.subheader("Total Score")
-            st.write(total_score)
+app = Flask(__name__)
 
 
-def generate_questions(skills, proficiency):
-    questions = []
-    for skill, prof in zip(skills, proficiency):
-        # Define the prompt and the model to use
-        prompt = f"Generate a situation based question  on the following skill: {skill} with profiency level {prof}. Question :\n"
-
-        # Call the OpenAI API to generate the question
-        response = openai.Completion.create(
-            engine="text-davinci-003",
-            prompt=prompt,
-            max_tokens=32,
-            n=1,
-            stop=None,
-            temperature=0.7,
-            top_p=1.0,
-            frequency_penalty=0.0,
-            presence_penalty=0.0
-        )
-        print(response)
-    # Retrieve and return the generated question from the API response
-        questions.append(response.choices[0].text.strip())
-    return questions
+@app.route('/')
+def index():
+    return render_template('index.html')
 
 
-@st.cache
-def generate_openai_answer(question):
-    # Placeholder function to generate answer using OpenAI
-    # You need to replace this with the actual OpenAI API call
-    # and retrieve the answer for the given question
+@app.route('/add_skills', methods=['GET', 'POST'])
+def add_skills():
 
-    response = openai.Completion.create(
-        engine="text-davinci-003",
-        prompt=question,
-        max_tokens=32,
-        n=1,
-        stop=None,
-        temperature=0.7,
-        top_p=1.0,
-        frequency_penalty=0.0,
-        presence_penalty=0.0
-    )
-    print(response)
-    # Retrieve and return the generated question from the API response
-
-    answer = response.choices[0].text.strip()
-    return answer
+    return render_template('add_skill.html')
 
 
-@st.cache
-def evaluate_answer(user_answer, openai_answer):
-    # Placeholder function to evaluate the user answer
-    # against the OpenAI answer and assign a score
-    # You can define your own evaluation logic here
-    prompt = f'Evaluate my Answer with GPT answer and give a score out pf 10. just give me a score in number nothing else.\nMy answer : \n {user_answer}\nGPT Answer:\n{openai_answer}'
+@app.route('/get_skills', methods=['GET', 'POST'])
+def get_skills():
+    skills_data = {}
 
-    response = openai.Completion.create(
-        engine="text-davinci-003",
-        prompt=prompt,
-        max_tokens=1,
-        n=1,
-        stop=None,
-        temperature=0.7,
-        top_p=1.0,
-        frequency_penalty=0.0,
-        presence_penalty=0.0
-    )
-    print(response)
-    # Retrieve and return the generated question from the API response
+    if request.method == 'POST':
+        device_id = request.remote_addr
 
-    score = response.choices[0].text.strip()
-    print(score, type(score))
-    return score
+        skills = request.form.getlist('skill')
+
+        proficiency_levels = request.form.getlist('proficiency')
+        skills_data = dict(zip(skills, proficiency_levels))
+
+        # Process the skills_data dictionary here
+        with open('skills_data.json', 'r') as file:
+            existing_data = json.load(file)
+            if device_id in existing_data:
+                # Update the existing data for the device ID
+                existing_data[device_id].update(skills_data)
+            else:
+                # Create a new entry for the device ID
+                existing_data[device_id] = skills_data
+
+        with open('skills_data.json', 'w') as file:
+            json.dump(existing_data, file)
+        print(existing_data)
+        return redirect('/interview')
+    return render_template('add_skill.html')
 
 
-if __name__ == "__main__":
-    openai.api_key = "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"
-    main()
+@app.route('/interview', methods=['GET'])
+def interview():
+    device_id = request.remote_addr
+    print('Device ID-', device_id)
+    skills_data, generated_questions = generate_questions(device_id)
+    print("generated_questions")
+    return render_template('interview.html', device_id=device_id, skills_data=skills_data, questions_data=generated_questions)
+
+
+def generate_questions(device_id):
+    # Retrieve the skills data for the device ID from the JSON file
+    with open('skills_data.json', 'r') as file:
+        skills_data = json.load(file).get(device_id, {})
+    # print("generat call-", skills_data)
+    # Retrieve the questions for each skill from the questions.json file
+    with open('questions.json', 'r') as file:
+        questions_data = json.load(file)
+
+    # Generate questions for each skill and proficiency level
+    generated_questions = {}
+    for skill, proficiency in skills_data.items():
+        try:
+            if questions_data[skill+'-'+proficiency]:
+                generated_questions = {
+                    skill+'-'+proficiency: questions_data[skill+'-'+proficiency]}
+        except:
+            # Retrieve the prompt for generating questions
+            prompt = f"Give one unique question on {skill} with proficiency level {proficiency}. Give scenario-based questions. Don't provide Answers"
+            generated_questions[skill+'-'+proficiency] = []
+            for i in range(3):
+                # Make API call to generate questions
+                response = openai.Completion.create(
+                    engine='text-davinci-003',
+                    prompt=prompt,
+                    max_tokens=60,
+                    n=1  # Number of questions to generate
+                )
+
+                # Extract the generated questions from the API response
+                generated_questions[skill+'-'+proficiency].append(
+                    response.choices[0].text.strip())
+
+    # Save the generated questions in the questions.json file
+    questions_data.update(generated_questions)
+    with open('questions.json', 'w') as file:
+        json.dump(questions_data, file)
+    return skills_data, questions_data
+
+
+@app.route('/save_answers', methods=['POST'])
+def save_answers():
+    device_id = request.args.get('device_id')
+    answers = {}
+
+    for key, value in request.form.items():
+        skill, question_no = key.split('_')
+        if skill not in answers:
+            answers[skill] = {}
+        answers[skill][question_no] = [
+            questions_data[skill][int(question_no) - 1], value]
+
+    # Load existing responses from the JSON file
+    with open('response.json', 'r') as file:
+        response_data = json.load(file)
+
+    # Update the responses with the new answers
+    response_data[device_id] = answers
+
+    # Save the updated responses to the JSON file
+    with open('response.json', 'w') as file:
+        json.dump(response_data, file)
+
+    return redirect('/result')
+
+
+@app.route('/result')
+def result():
+    return render_template('result.html')
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
